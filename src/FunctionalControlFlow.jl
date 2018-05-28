@@ -65,11 +65,8 @@ macro functionalize(ex)
                               for i_ in v_ b_ end | for i_ = v_ b_ end)
             if isexpr(x, :for)
                 c = :(next !== nothing)
-                b = quote
-                        ($i, state) = next
-                        $b # TODO maybe splice contents of block
-                        next = iterate($v, state)
-                    end
+                b.args = [:(($i, state) = next), b.args...,
+                          :(next = iterate($v, state))]
             end
             params = vars(c, b)
             cf, bf = func(c, params), func(b, params)

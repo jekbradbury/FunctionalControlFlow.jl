@@ -1,3 +1,7 @@
+module FunctionalControlFlow
+
+export @functionalize
+
 using MacroTools: @capture, prewalk, postwalk, isexpr, rmlines, unblock, block
 
 function vars(ex; callables=false, types=false)
@@ -108,3 +112,5 @@ macro functionalize(ex)
         end
     end
 end
+
+end #module

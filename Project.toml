@@ -1,0 +1,4 @@
+authors = ["James Bradbury <jekbradbury@gmail.com>"]
+name = "FunctionalControlFlow"
+uuid = "cfd92037-931f-4d2a-a1f9-7af63ced8c32"
+version = "0.1.0"

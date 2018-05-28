@@ -1,31 +1,5 @@
 using MacroTools: @capture, prewalk, postwalk, isexpr, rmlines, unblock, block
 
-# function lhsvars(ex)
-#     ex isa Symbol && return [ex]
-#     @capture(ex, a_.b_ | a_[b_]) && return lhsvars(a)
-#     @capture(ex, (a__,)) || @error "bad lhs expr" ex head=ex.head
-#     refs = Symbol[]
-#     for ai in a
-#         append!(refs, lhsvars(ai))
-#     end
-#     return refs
-# end
-#
-# function vars(ex)
-#     ex isa Number && return Symbol[], Symbol[]
-#     ex isa Symbol && return [ex], Symbol[]
-#     ex isa QuoteNode && return Symbol[], Symbol[]
-#     ex = ex |> rmlines |> unblock
-#     @capture(ex, a_.b_) && return vars(a)
-#     loads, stores = Symbol[], Symbol[]
-#     @capture(ex, a_ = b_) && append!(stores, lhsvars(a))
-#     #args = isexpr(ex, :call) ? ex.args[2:end] : ex.args
-#     for x in ex.args
-#         append!.((loads, stores), vars(x))
-#     end
-#     return loads, stores
-# end
-
 function vars(ex; callables=false, types=false)
     isexpr(ex, Number, QuoteNode) && return Symbol[]
     isexpr(ex, Symbol) && return [ex]

@@ -6,7 +6,7 @@ using MacroTools: @capture, prewalk, postwalk, isexpr, rmlines, unblock, block
 
 function vars(ex; callables=false, types=false)
     isexpr(ex, Number, QuoteNode) && return Symbol[]
-    isexpr(ex, Symbol) && return [ex]
+    isexpr(ex, Symbol) && return ex == :nothing ? Symbol[] : [ex]
     ex = ex |> rmlines |> unblock
     @capture(ex, a_.b_) && return vars(a)
     params = Symbol[]
@@ -72,14 +72,18 @@ macro functionalize(ex)
             if isexpr(x, :for)
                 c = :(next !== nothing)
                 b.args = [:(($i, state) = next), b.args...,
-                          :(next = iterate($v, state))]
+                          :(next = iterate(it, state))]
             end
             params = vars(c, b)
             cf, bf = func(c, params; mut=false), func(b, params)
-            quote
+            ret = quote
                 $(bf.args[1]) = _while($cf, $bf, $(defined(bf.args[1])))
                 $(bf.args[1].args[1])
             end
+            if isexpr(x, :for)
+                pushfirst!(ret.args, :(it = $v), :(next = iterate(it)))
+            end
+            ret
         elseif @capture(x, if c_ b1_ else b2_ end)
             params = vars(b1, b2)
             f1, f2 = func(b1, params), func(b2, params)

@@ -27,18 +27,16 @@ end
 defined(param::Symbol) = :($(Expr(:isdefined, param)) ? $param : nothing)
 defined(params::Expr) = Expr(:tuple, (defined(p) for p in params.args)...)
 
-function func(ex, params)
+function func(ex, params; mut=true)
     params = :(ret, $(params...))
     ex = block(ex)
-    ex.args[end] = :(ret = $(ex.args[end]))
-    push!(ex.args, :(return $params))
+    if mut
+        ex.args[end] = :(ret = $(ex.args[end]))
+        push!(ex.args, :(return $params))
+    end
     return Expr(:(->), params, ex)
 end
-func(ex) = func(ex, unique(vars(ex)))
-function func(ex1, ex2)
-    params = vars(ex1, ex2)
-    return func(ex1, params), func(ex2, params)
-end
+func(ex; mut=true) = func(ex, unique(vars(ex)); mut=mut)
 
 function _while(cond, body, params)
     while cond(params...)
@@ -76,13 +74,15 @@ macro functionalize(ex)
                 b.args = [:(($i, state) = next), b.args...,
                           :(next = iterate($v, state))]
             end
-            cf, bf = func(c, b)
+            params = vars(c, b)
+            cf, bf = func(c, params; mut=false), func(b, params)
             quote
                 $(bf.args[1]) = _while($cf, $bf, $(defined(bf.args[1])))
                 $(bf.args[1].args[1])
             end
         elseif @capture(x, if c_ b1_ else b2_ end)
-            f1, f2 = func(b1, b2)
+            params = vars(b1, b2)
+            f1, f2 = func(b1, params), func(b2, params)
             quote
                 $(f1.args[1]) = _if($c, $f1, $f2, $(defined(f1.args[1])))
                 $(f1.args[1].args[1])
@@ -107,6 +107,9 @@ macro functionalize(ex)
                 $(f.args[1]) = _if(c, $f, $(defined(f.args[1])))
                 c ? $(f.args[1].args[1]) : true
             end
+        elseif isexpr(x, :function)
+            x.args[1].args[1] = esc(x.args[1].args[1])
+            x
         else
             x
         end

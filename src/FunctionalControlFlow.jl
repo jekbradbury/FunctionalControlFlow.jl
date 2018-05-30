@@ -18,8 +18,8 @@ function vars(ex; callables=false, types=false)
     return params
 end
 function vars(ex1, ex2; callables=false, types=false)
-    params = vars(ex1)
-    append!(params, vars(ex2))
+    params = vars(ex1; callables=callables, types=types)
+    append!(params, vars(ex2; callables=callables, types=types))
     unique!(params)
     return params
 end

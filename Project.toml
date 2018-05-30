@@ -2,3 +2,6 @@ authors = ["James Bradbury <jekbradbury@gmail.com>"]
 name = "FunctionalControlFlow"
 uuid = "cfd92037-931f-4d2a-a1f9-7af63ced8c32"
 version = "0.1.0"
+
+[deps]
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"

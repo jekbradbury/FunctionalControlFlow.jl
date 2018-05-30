@@ -35,6 +35,10 @@ function func(ex, params)
     return Expr(:(->), params, ex)
 end
 func(ex) = func(ex, unique(vars(ex)))
+function func(ex1, ex2)
+    params = vars(ex1, ex2)
+    return func(ex1, params), func(ex2, params)
+end
 
 function _while(cond, body, params)
     while cond(params...)
@@ -72,17 +76,13 @@ macro functionalize(ex)
                 b.args = [:(($i, state) = next), b.args...,
                           :(next = iterate($v, state))]
             end
-            params = vars(c, b)
-            cf, bf = func(c, params), func(b, params)
+            cf, bf = func(c, b)
             quote
-                $(f1.args[1]) = _while($cf, $bf, $(defined(bf.args[1])))
-                $(f1.args[1].args[1])
+                $(bf.args[1]) = _while($cf, $bf, $(defined(bf.args[1])))
+                $(bf.args[1].args[1])
             end
         elseif @capture(x, if c_ b1_ else b2_ end)
-            params = vars(b1)
-            append!(params, vars(b2))
-            unique!(params)
-            f1, f2 = func(b1, params), func(b2, params)
+            f1, f2 = func(b1, b2)
             quote
                 $(f1.args[1]) = _if($c, $f1, $f2, $(defined(f1.args[1])))
                 $(f1.args[1].args[1])
@@ -97,15 +97,15 @@ macro functionalize(ex)
             f = func(b)
             quote
                 c = $a
-                $(f.args[1]) = _if(cond, $f, $(defined(f.args[1])))
-                cond ? $(f.args[1].args[1]) : false
+                $(f.args[1]) = _if(c, $f, $(defined(f.args[1])))
+                c ? $(f.args[1].args[1]) : false
             end
         elseif @capture(x, a_ || b_)
             f = func(b)
             quote
                 c = !$a
-                $(f.args[1]) = _if(cond, $f, $(defined(f.args[1])))
-                cond ? $(f.args[1].args[1]) : true
+                $(f.args[1]) = _if(c, $f, $(defined(f.args[1])))
+                c ? $(f.args[1].args[1]) : true
             end
         else
             x
